@@ -1,5 +1,7 @@
-Start server with command
+## Start server with command
 
-redis-server (on WSL if on windows)
-nodemon rest/server.js
-nodemon socket/server.js
+1. ```redis-server``` (on WSL if on windows)
+
+2. ```nodemon rest/server.js```
+
+3. ```nodemon socket/server.js```
