@@ -2,6 +2,16 @@ const mongoose = require('mongoose');
 
 // Chat Schema
 const roomSchema = new mongoose.Schema({
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    connection_string: {
+        type: String,
+        required: true,
+        unique: true
+    },
     name: {
         type: String,
         required: true
@@ -12,7 +22,7 @@ const roomSchema = new mongoose.Schema({
     },
     lastSession: {
         type: Date,
-        default: Date.now
+        default: null
     }
 });
 
@@ -21,7 +31,10 @@ const roomParticipantSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+    },
+    name: {
+        type: String,
+        default: ''
     },
     room: {
         type: mongoose.Schema.Types.ObjectId,

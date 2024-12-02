@@ -12,13 +12,14 @@ const JWT_SECRET = "298fhn98b87vh!@ERFE$G$%Rbrtrbh";
 
 const fetchUser = (req, res, next) => {
   const token = req.header("Authorization").split(" ")[1];
+
   if (!token) {
     res.status(401).send({ error: "Please authenticate using a valid token" });
   }
 
   try {
     const data = jwt.verify(token, JWT_SECRET);
-    req.user = data.user;
+    req.user = data;
     next();
   } catch (error) {
     res.status(401).send({ error: "Please authenticate using a valid token" });
