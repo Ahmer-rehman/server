@@ -12,8 +12,6 @@ const handleConnection = (socket) => {
     socket.emit('vc_connected', {
         socket_id: socket.id
     });
-
-    console.log('New VC client connected:', { socketId: socket.id });
 };
 
 const handleRoomJoin = async (io, socket, data, callback) => {
@@ -29,7 +27,7 @@ const handleRoomJoin = async (io, socket, data, callback) => {
 
     const payload = {
         user: user,
-        username: username,
+        username: username ? username : 'default',
         socket_id: socket.id
     }
 
@@ -43,18 +41,21 @@ const handleRoomJoin = async (io, socket, data, callback) => {
         const userExists = existingUsers.some(u => u?.socket_id === socket.id);
 
         if (!userExists) {
+            socket.join(room_id);
+
+            // Broadcast to other users in the room that a new user has joined
+            socket.to(room_id).emit('user_joined', {
+                socket_id: socket.id,
+                username: username,
+                user: user,
+            });
+
             // Add the new user to the room's user list
             const updatedUsers = [...existingUsers, payload];
 
             // Store the updated user list back in Redis
             await redisClient.set(room_id, JSON.stringify(updatedUsers));
         }
-
-        // Broadcast to other users in the room that a new user has joined
-        socket.to(room_id).emit('user_joined', {
-            socket_id: socket.id,
-            username: username
-        });
 
         const temp = await redisClient.get(room_id);
         console.log(JSON.parse(temp))
@@ -94,9 +95,12 @@ const handleRoomLeave = async (io, socket, data, callback) => {
         // Update Redis with the new user list
         if (updatedUsers.length > 0) {
             await redisClient.set(room_id, JSON.stringify(updatedUsers));
+            const temp = await redisClient.get(room_id);
+            console.log(JSON.parse(temp))
         } else {
             // If no users left, remove the room key
             await redisClient.del(room_id);
+            console.log(JSON.parse(temp))
         }
 
         // Leave the socket room
@@ -105,7 +109,7 @@ const handleRoomLeave = async (io, socket, data, callback) => {
         // Broadcast to remaining users that this user has left
         socket.to(room_id).emit('user_left', {
             socket_id: socket.id,
-            username: username
+            username: username,
         });
 
         // Optional: Acknowledge the room leave
@@ -129,10 +133,50 @@ const handleRoomLeave = async (io, socket, data, callback) => {
     }
 };
 
+
+// New function to handle user leaving a room
+const handleSendMessage = async (io, socket, data, callback) => {
+    const { room_id, message, username, accessToken } = data;
+
+    let user = null
+
+    try {
+        user = jwt.verify(accessToken, JWT_SECRET);
+    } catch (error) {
+
+    }
+
+    try {
+        // Broadcast to remaining users that this user has left
+        socket.to(room_id).emit('receive_message', {
+            socket_id: socket.id,
+            message: message,
+            username: username,
+        });
+
+        // Optional: Acknowledge the room leave
+        if (callback) {
+            callback({
+                status: 'sent',
+                room_id: room_id
+            });
+        }
+
+        console.log(`User ${username} said ${message}`);
+    } catch (error) {
+        console.error('Error handling send message:', error);
+
+        if (callback) {
+            callback({
+                status: 'error',
+                message: 'Failed to send message'
+            });
+        }
+    }
+};
+
 // Modified handleDisconnection to remove user from room
 const handleDisconnection = async (socket) => {
-    console.log('VC client disconnected:', { socketId: socket.id });
-
     try {
         // Find and remove the user from all rooms
         const keys = await redisClient.keys('*');
@@ -170,5 +214,7 @@ const handleDisconnection = async (socket) => {
 module.exports = {
     handleConnection,
     handleDisconnection,
-    handleRoomJoin
+    handleRoomJoin,
+    handleRoomLeave,
+    handleSendMessage
 };

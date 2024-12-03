@@ -131,7 +131,7 @@ let createRoom = async (req, res) => {
         }
 
         // Generate a unique connection string
-        const connection_string = crypto.randomBytes(16).toString('hex');
+        const connection_string = crypto.randomBytes(4).toString('hex');
 
         // Create a new room with the name, user ID, and connection string
         const room = new Room({

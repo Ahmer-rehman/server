@@ -1,7 +1,9 @@
 const {
     handleConnection,
     handleDisconnection,
-    handleRoomJoin
+    handleRoomJoin,
+    handleRoomLeave,
+    handleSendMessage
 } = require('./Controllers');
 
 module.exports = (io) => {
@@ -19,6 +21,10 @@ module.exports = (io) => {
 
         socket.on('leave_room', (data, callback) => {
             handleRoomLeave(io, socket, data, callback);
+        });
+
+        socket.on('send_message', (data, callback) => {
+            handleSendMessage(io, socket, data, callback);
         });
     });
 };
