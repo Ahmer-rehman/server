@@ -8,6 +8,7 @@ const JWT_SECRET = "298fhn98b87vh!@ERFE$G$%Rbrtrbh";
 
 // Backend Views.js (Controllers.js)
 const handleConnection = (socket) => {
+    console.log("socket connected", socket.id)
     // Send user ID back to the client upon connection
     socket.emit('vc_connected', {
         socket_id: socket.id
@@ -47,7 +48,6 @@ const handleRoomJoin = async (io, socket, data, callback) => {
             socket.to(room_id).emit('user_joined', {
                 socket_id: socket.id,
                 username: username,
-                user: user,
             });
 
             // Add the new user to the room's user list
@@ -58,14 +58,12 @@ const handleRoomJoin = async (io, socket, data, callback) => {
         }
 
         const temp = await redisClient.get(room_id);
-        console.log(JSON.parse(temp))
 
         // Optional: Acknowledge the room join
         if (callback) {
             callback({
                 status: 'joined',
                 room_id: room_id,
-                users: existingUsers
             });
         }
     } catch (error) {
@@ -96,11 +94,9 @@ const handleRoomLeave = async (io, socket, data, callback) => {
         if (updatedUsers.length > 0) {
             await redisClient.set(room_id, JSON.stringify(updatedUsers));
             const temp = await redisClient.get(room_id);
-            console.log(JSON.parse(temp))
         } else {
             // If no users left, remove the room key
             await redisClient.del(room_id);
-            console.log(JSON.parse(temp))
         }
 
         // Leave the socket room
@@ -119,8 +115,6 @@ const handleRoomLeave = async (io, socket, data, callback) => {
                 room_id: room_id
             });
         }
-
-        console.log(`User ${username} left room ${room_id}`);
     } catch (error) {
         console.error('Error handling room leave:', error);
 
@@ -161,8 +155,6 @@ const handleSendMessage = async (io, socket, data, callback) => {
                 room_id: room_id
             });
         }
-
-        console.log(`User ${username} said ${message}`);
     } catch (error) {
         console.error('Error handling send message:', error);
 
