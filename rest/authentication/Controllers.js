@@ -102,7 +102,7 @@ const loginUser = async (req, res) => {
             username: user.username
           };
           const accessToken = jwt.sign(payload, JWT_SECRET, {
-            expiresIn: "5m",
+            expiresIn: "1440m",
           });
 
           // Generate Refresh Token
@@ -189,7 +189,7 @@ const refresh = async (req, res) => {
     };
 
     // Generate new Access Token
-    const newAccessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "5m" });
+    const newAccessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "1440m" });
 
     // Generate new Refresh Token
     const newRefreshTokenString = randomString.generate(192);
