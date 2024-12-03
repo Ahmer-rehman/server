@@ -181,6 +181,7 @@ const handleDisconnection = async (socket) => {
             const userInRoom = existingUsers.find(u => u?.socket_id === socket.id);
 
             if (userInRoom) {
+                console.log(userInRoom)
                 // Remove the user from the room
                 const updatedUsers = existingUsers.filter(u => u?.socket_id !== socket.id);
 
