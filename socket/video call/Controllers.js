@@ -32,6 +32,7 @@ const handleRoomJoin = async (io, socket, data, callback) => {
         socket_id: socket.id
     }
 
+
     // Store the user in Redis for this room
     try {
         // First, get existing users for the room
