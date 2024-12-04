@@ -8,9 +8,10 @@ const jwt = require("jsonwebtoken");
 const randomString = require("randomstring");
 
 
-const JWT_SECRET = "298fhn98b87vh!@ERFE$G$%Rbrtrbh";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const fetchUser = (req, res, next) => {
+  // Extract the bearer token from the request
   const token = req.header("Authorization").split(" ")[1];
 
   if (!token) {
@@ -149,6 +150,15 @@ const verify = async (req, res) => {
   }
 };
 
+const verifyTokenForRTC = (token) => {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded
+  } catch(error) {
+    return null;
+  }
+}
+
 const refresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -225,4 +235,5 @@ module.exports = {
   signupUser,
   refresh,
   verify,
+  verifyTokenForRTC
 };

@@ -19,7 +19,7 @@ redisConnection();
 // Available Routes
 app.use('/auth', require('./authentication/Views'))
 app.use('/vc', require('./video call/Views'))
-// app.use('/crud', require('./crud/Urls'))
+app.use('/im',require('./instant messaging/Views'))
 
 // Run Server on specified port
 app.listen(port, () => {

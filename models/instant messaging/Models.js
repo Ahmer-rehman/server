@@ -1,12 +1,24 @@
+const { text } = require('express');
 const mongoose = require('mongoose');
+
+// Keeping it restricted to 1-1 messaging for now
+const arrayLimit = (val) => {
+    return val.length === 2; 
+  };
 
 // Chat Schema
 const chatSchema = new mongoose.Schema({
     users: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        validate: [arrayLimit, '{PATH} must contain exactly 2 participants'], 
     }],
+    lastMessage: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ChatMessage',
+        required: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -19,22 +31,40 @@ const chatSchema = new mongoose.Schema({
 
 // Chat Message Schema
 const chatMessageSchema = new mongoose.Schema({
-    text: {
-        type: String,
-        required: true
+    chatId: {
+        type: mongoose.Schema.Types.ObjectId,    
+        ref: 'Chat',
+        required: true,
     },
-    date: {
-        type: Date,
-        default: Date.now
-    },
-    user: {
+    senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    file: {
+    receiverId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    text: {
+        type: String,
+        required: false
+    },
+    sentAt: {
+        type: Date,
+        default: Date.now
+    },
+    attachments: [{
         type: String, // Storing the file path or URL
         required: false
+    }],
+    isDelivered: {
+        type: Boolean,
+        default: false
+    },
+    isSeen: {
+        type: Boolean,
+        default: false
     }
 });
 
