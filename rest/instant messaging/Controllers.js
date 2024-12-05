@@ -1,5 +1,32 @@
 const { Chat, ChatMessage } = require('../../models/instant messaging/Models');
+const { User } = require('../../models/authentication/Models');
 const errorLogger = require('../../utils/errorLogger')
+
+const getUserData = async (req, res) => {
+    try {
+        console.log(req)
+        const user = await User.findById(req.user.id).select('username profilePic');
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Force HTTPS for the profilePic URL
+        const secureUrl = `https://${req.get('host')}/${user.profilePic}`;
+
+        // Return the user data, profile pic must be a full secured URL
+        const userData = {
+            username: user.username,
+            profilePic: secureUrl
+        };
+        
+        res.status(200).json({ user: userData });
+
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        res.status(500).json({ message: "Error fetching data" });
+    }
+};
 
 
 // Fetch messages for a specific chatroom with pagination
@@ -140,4 +167,6 @@ module.exports = {
     getAllChats,
     sendChatMessage,
     getChatMessages,
+    getMessages,
+    getUserData
 };

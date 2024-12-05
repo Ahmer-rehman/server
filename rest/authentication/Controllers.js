@@ -150,12 +150,17 @@ const verify = async (req, res) => {
   }
 };
 
-const verifyTokenForRTC = (token) => {
+const verifyTokenForRTC = async (token) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    return decoded
+    const user = await User.findById(decoded.id);
+        if (!user) {
+            throw new Error('User not found');
+        }
+    decoded.user = user;
+    return decoded;
   } catch(error) {
-    return null;
+    throw new Error('Invalid token');
   }
 }
 

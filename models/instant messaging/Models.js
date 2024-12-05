@@ -1,10 +1,9 @@
 const { text } = require('express');
 const mongoose = require('mongoose');
 
-// Keeping it restricted to 1-1 messaging for now
 const arrayLimit = (val) => {
-    return val.length === 2; 
-  };
+    return val.length === 2;  // Only allow exactly 2 users
+};
 
 // Chat Schema
 const chatSchema = new mongoose.Schema({
@@ -12,7 +11,6 @@ const chatSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true,
-        validate: [arrayLimit, '{PATH} must contain exactly 2 participants'], 
     }],
     lastMessage: {
         type: mongoose.Schema.Types.ObjectId,

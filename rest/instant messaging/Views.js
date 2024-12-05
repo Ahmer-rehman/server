@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { fetchUser } = require('../authentication/Controllers'); // User authentication middleware
-const { createChatroom, getAllChats, sendMessage, getMessages } = require('./Controllers');
+const { getUserData,createChatroom, getAllChats, sendMessage, getMessages } = require('./Controllers');
 
 // Global middleware for authenticated requests only applies to all routes in this router
 router.use(fetchUser);
@@ -22,5 +22,9 @@ router.post("/send-message", async (req, res) => {
 router.get("/get-messages/:chatroomId", async (req, res) => {
     getMessages(req, res);
 });
+
+router.get("/user-data", async (req,res) => {
+    getUserData(req, res);
+})
 
 module.exports = router;
