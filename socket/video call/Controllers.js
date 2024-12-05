@@ -4,7 +4,7 @@ const randomString = require("randomstring");
 const { redisClient } = require("../../redis");
 
 
-const JWT_SECRET = "298fhn98b87vh!@ERFE$G$%Rbrtrbh";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Backend Views.js (Controllers.js)
 const handleConnection = (socket) => {
@@ -58,13 +58,13 @@ const handleRoomJoin = async (io, socket, data, callback) => {
             await redisClient.set(room_id, JSON.stringify(updatedUsers));
         }
 
-        const temp = await redisClient.get(room_id);
-
         // Optional: Acknowledge the room join
         if (callback) {
             callback({
                 status: 'joined',
                 room_id: room_id,
+                existingUsers: existingUsers,
+                socket_id: socket.id
             });
         }
     } catch (error) {
