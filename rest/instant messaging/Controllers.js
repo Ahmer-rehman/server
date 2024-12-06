@@ -1,6 +1,6 @@
 const { Chat, ChatMessage } = require('../../models/instant messaging/Models');
 const { User } = require('../../models/authentication/Models');
-const errorLogger = require('../../utils/errorLogger')
+// const errorLogger = require('../../utils/errorLogger')
 
 const getUserData = async (req, res) => {
     try {
@@ -82,7 +82,7 @@ const createChat = async (req, res) => {
         res.status(201).json({ message: "Chat created successfully", chat });
     } catch (error) {
         console.error(error);
-        errorLogger(error); 
+        // errorLogger(error); 
         res.status(500).json({ message: "Error creating chat" });
     }
 };
@@ -154,7 +154,7 @@ const getAllChats = async (req, res) => {
         res.status(200).json({ chats: formattedChats });
     } catch (error) {
         console.error(error);
-        errorLogger(error);
+        // errorLogger(error);
         res.status(500).json({ message: "Error fetching chats" });
     }
 };
