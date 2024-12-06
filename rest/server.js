@@ -2,6 +2,7 @@ const express = require("express");
 const connectToDatabase = require("../db");
 const cors = require('cors');
 const { redisConnection } = require("../redis");
+const path = require('path');
 
 const port = 8000;
 const app = express();
@@ -9,6 +10,9 @@ const app = express();
 //middleware
 app.use(cors());
 app.use(express.json())
+
+// Serve static files from the 'assets' folder
+app.use(express.static(path.join(__dirname, 'assets')));
 
 //database connection
 connectToDatabase();

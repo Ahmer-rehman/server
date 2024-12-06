@@ -19,7 +19,7 @@ const getUserData = async (req, res) => {
             username: user.username,
             profilePic: secureUrl
         };
-        
+
         res.status(200).json({ user: userData });
 
     } catch (error) {
@@ -97,23 +97,59 @@ const getAllChats = async (req, res) => {
             })
             .populate({
                 path: 'lastMessage',
-                select: 'text sentAt attachments' // Include attachments field in the query
+                select: 'senderId receiverId text sentAt isDelivered isSeen attachments' 
             });
 
         // Format the response to include only necessary information
-        const formattedChats = chats.map(chat => {
-            const hasAttachment = chat.lastMessage?.attachments?.length > 0;
+        const formattedChats = await Promise.all(chats.map(async chat => {
+            // Get the other participant (not the requesting user)
+            const otherParticipant = chat.users.find(user => user._id.toString() !== req.user.id.toString());
+
+            // Check if the last message is from the other participant
+            const isMessageFromOtherParticipant = chat.lastMessage?.senderId.toString() !== req.user.id.toString();
+            
+            // Count the unseen messages from the other participant (if the message is from them)
+            let unseenCount = 0;
+            if (isMessageFromOtherParticipant) {
+                unseenCount = await ChatMessage.countDocuments({
+                    conversationId: chat._id,
+                    senderId: otherParticipant._id,
+                    isSeen: false,
+                });
+            }
+
+            // Secured profile url
+            const profilePicUrl = `https://${req.get('host')}/${otherParticipant.profilePic}`;
+
+            // Format the sentAt date like "HH:mm" or "MM/DD/YYYY"
+            const sentAt = new Date(chat.lastMessage?.sentAt);
+            const now = new Date();
+            
+            const hours = sentAt.getHours().toString().padStart(2, '0'); // Add leading zero if needed
+            const minutes = sentAt.getMinutes().toString().padStart(2, '0'); // Add leading zero if needed
+            const time = `${hours}:${minutes}`;
+
+            // Check if the message is older than today
+            const isOlderThanToday = sentAt.toDateString() !== now.toDateString();
+
+            // Create a formatted date string, e.g., "07/15/2024"
+            const dateString = `${(sentAt.getMonth() + 1).toString().padStart(2, '0')}/${sentAt.getDate().toString().padStart(2, '0')}/${sentAt.getFullYear()}`;
 
             return {
                 chatId: chat._id,
-                users: chat.users, // This will contain the other user(s) and their info
-                lastMessage: {
-                    text: chat.lastMessage.text,
-                    sentAt: chat.lastMessage.sentAt,
-                    attachmentIcon: hasAttachment ? path.join(__dirname, 'assests', 'icons', 'icon.png') : null
+                participant: {
+                    user_id: otherParticipant._id,
+                    name: otherParticipant.username,
+                    profilePic: profilePicUrl,
                 },
+                lastMessage: chat.lastMessage ? {
+                    messageId: chat.lastMessage._id,
+                    message: chat.lastMessage.text,
+                    sentAt: isOlderThanToday ? dateString : time, // Use date or time based on the message's age
+                } : null,
+                unseenCount: unseenCount,
             };
-        });
+        }));
 
         res.status(200).json({ chats: formattedChats });
     } catch (error) {
@@ -122,6 +158,7 @@ const getAllChats = async (req, res) => {
         res.status(500).json({ message: "Error fetching chats" });
     }
 };
+
 
 // Send a message in a chat (for authenticated users)
 const sendChatMessage = async (req, res) => {

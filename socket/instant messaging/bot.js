@@ -1,10 +1,16 @@
 const io = require('socket.io-client');
 const readline = require('readline');
-const SERVER_URL = 'https://cc9d-182-180-55-138.ngrok-free.app';
-const tokenA = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NTAyN2RhMjBiNWViOWE3Y2ZlNGE5MiIsImVtYWlsIjoiYm90QGdtYWlsLmNvbSIsInVzZXJuYW1lIjoiYm90IiwiaWF0IjoxNzMzMzc5MjI2LCJleHAiOjE3MzM0NjU2MjZ9.2DB6JB5JRtt4Ez77xdk_fUH6mBavg4tAqpOR_z6SHEE';
+const SERVER_URL = 'https://7fd6-182-180-55-138.ngrok-free.app';
+const tokenA = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3NTAyN2RhMjBiNWViOWE3Y2ZlNGE5MiIsImVtYWlsIjoiYm90QGdtYWlsLmNvbSIsInVzZXJuYW1lIjoiYm90IiwiaWF0IjoxNzMzNDEzMDg1LCJleHAiOjE3MzM0OTk0ODV9.9VQEEtknecEwH2Gbvz0qo3TT8thxVa4VUZqw-Zj5xcs';
 
 const socketA = io(`${SERVER_URL}/im`, {
     query: { token: tokenA }
+});
+
+// Handle authentication error
+socketA.on('authError', (errorMessage) => {
+    console.error('Authentication Error:', errorMessage);
+    socketA.disconnect();  
 });
 
 // Setup readline for terminal input
@@ -20,17 +26,31 @@ socketA.on('connect', () => {
     const participantIdB = '674da08fdcfb178d08b299a3'; 
     
     socketA.emit('checkConversation', { participantId: participantIdB });
+
     socketA.on('conversationCheckResponse', (data) => {
         if (data.exists) {
             console.log(`Conversation exists with ID: ${data.conversationId}`);
             activeConversationIdA = data.conversationId;
             socketA.emit('joinRoom', activeConversationIdA);
+
+            // Emit isDelivered and isSeen for each message
+            data.messages.forEach(msg => {
+                socketA.emit('isDelivered', {
+                    messageId: msg.messageId,
+                });
+
+                socketA.emit('markAsSeen', {
+                    messageId: msg.messageId,
+                });
+            });
+
             promptMessageA();
         } else {
             console.log('No existing conversation found. Creating a new conversation...');
             socketA.emit('createConversation', { participantId: participantIdB });
         }
     });
+
 
     socketA.on('chatRoomCreated', (conversationId) => {
         console.log(`Chat room created with ID: ${conversationId}`);

@@ -1,7 +1,6 @@
 const { Chat, ChatMessage } = require('../../models/instant messaging/Models');
 const {User} = require('../../models/authentication/Models');
 const { verifyTokenForRTC } = require('../../rest/authentication/Controllers');
-const mongoose = require('mongoose');
 
 module.exports = (io) => {
 
@@ -10,6 +9,7 @@ io.use(async (socket, next) => {
     try {
         const token = socket.handshake.query.token;  // Extract token from query parameters
         if (!token) {
+            socket.emit('authError', 'Token missing. Please provide a valid token.');
             return next(new Error('Authentication error: Token missing.'));
         }
         console.log('Token received:', token)
@@ -30,7 +30,7 @@ io.on('connection', (socket) => {
         const participants = [socket.user._id, participantId].sort(); // Sort for consistency
 
         const conversation = await Chat.findOne({
-            users: participants // Exact match for sorted users array
+            users: { $all: participants }  // Match any order of the two participants
         });
 
         console.log("checking conversation...");
@@ -74,7 +74,7 @@ io.on('connection', (socket) => {
 
     // Create a new conversation|room
     socket.on('createConversation', async ({ participantId }) => {
-       console.log("create conversation invoked");
+
         let participant = await User.findOne({ _id: participantId });
 
         if (!participant) {
@@ -82,7 +82,6 @@ io.on('connection', (socket) => {
         }
 
         // don't need to convert object_id, as mongo db can handle object ids directly
-        console.log(`${socket.user._id} and ${participantId}`)
 
         const newConversation = await Chat.create({
             users: [socket.user._id, participantId],
@@ -132,6 +131,7 @@ io.on('connection', (socket) => {
             receiverId: newMessage.receiverId,
             message: newMessage.text,
             seen: newMessage.isSeen,
+            delivered: newMessage.isDelivered,
             sentAt: new Date(newMessage.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             attachments: newMessage.attachments? newMessage.attachments:null,
         };
@@ -139,17 +139,24 @@ io.on('connection', (socket) => {
         socket.to(conversationId).emit('receiveMessage', formattedMessage);
     });
 
-    // Listen for typing events
-    socket.on('typing', (conversationId) => {
-        socket.broadcast.to(conversationId).emit('Typing', conversationId.toString());
+    // Listen for isDelivered event from client
+    socket.on('isDelivered', async (messageId) => {
+        await ChatMessage.findByIdAndUpdate(messageId, { isDelivered: true });
+        console.log(`Message delivered to ${socket.user.username}`);
+
     });
 
     // Handle message seen event
     socket.on('markAsSeen', async ({messageId,conversationId}) => {
-        await Message.findByIdAndUpdate(messageId, { seen: true });
+        await ChatMessage.findByIdAndUpdate(messageId, { isSeen: true });
         console.log(`Message seen by ${socket.user.username}`);
-        socket.to(conversationId).emit('messageSeen', messageId);
     });
+
+    // Listen for typing events
+    socket.on('typing', async (conversationId) => {
+        socket.broadcast.to(conversationId).emit('Typing', conversationId.toString());
+    });
+
 
     // Handle message delete event
     socket.on('deleteMessage', async (messageId) => {

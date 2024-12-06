@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const connectToDatabase = require("../db");
 const { redisConnection, redisClient } = require("../redis");
+const path = require('path');
 
 const port = 8080;
 const app = express();
@@ -11,6 +12,9 @@ const app = express();
 connectToDatabase();
 
 redisConnection();
+
+// Serve static files from the 'assets' folder
+app.use(express.static(path.join(__dirname, 'assets')));
 
 app.use(cors({
     origin: ['http://localhost:8080', 'http://localhost:3000'],
