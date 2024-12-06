@@ -16,6 +16,7 @@ const handleConnection = (socket) => {
 };
 
 const handleRoomJoin = async (io, socket, data, callback) => {
+    console.log('join called')
     const { room_id, username, accessToken } = data;
 
     let user = null

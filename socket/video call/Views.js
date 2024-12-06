@@ -24,6 +24,7 @@ module.exports = (io) => {
 
         socket.on("returning_signal", data => {
             io.to(data.new_user_socket_id).emit('receiving_returned_signal', {
+                username: data.new_user_name,
                 signal: data.signal,
                 socket_id: socket.id
             });
